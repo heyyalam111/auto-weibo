@@ -253,12 +253,14 @@ def main():
     # 4. 解析 JSON
     print("[*] 解析分析结果...")
 
-    # 清理响应：移除 thinking 标签
+    # 清理响应：移除 thinking 标签和 markdown 代码块
     cleaned = result
     if '</think>' in cleaned:
         cleaned = cleaned.split('</think>')[-1]
     if '<thinking>' in cleaned:
         cleaned = cleaned.split('<thinking>')[-1]
+    # 移除 markdown 代码块
+    cleaned = cleaned.replace('```json', '').replace('```', '')
     cleaned = cleaned.strip()
 
     print(f"[*] 清理后长度: {len(cleaned)}")
