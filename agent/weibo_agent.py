@@ -41,32 +41,53 @@ def get_weibo_hotsearch(max_count=20):
 
 
 def call_minimax(prompt, api_key, base_url, model):
-    """调用 MiniMax API"""
-    url = f"{base_url}/v1/chat/completions"
+    """调用 MiniMax API - 兼容各种格式"""
+
+    # 移除末尾的 /anthropic 如果有的话
+    base_url = base_url.rstrip('/')
+
+    # 尝试多种端点格式
+    endpoints = [
+        f"{base_url}/v1/chat/completions",
+        f"{base_url}/chat/completions",
+    ]
 
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json"
     }
 
-    data = {
-        "model": model,
-        "messages": [{"role": "user", "content": prompt}],
-        "max_tokens": 4096
-    }
+    for url in endpoints:
+        print(f"  尝试端点: {url}")
+        try:
+            data = {
+                "model": model,
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": 4096
+            }
 
-    try:
-        resp = requests.post(url, headers=headers, json=data, timeout=120)
-        result = resp.json()
+            resp = requests.post(url, headers=headers, json=data, timeout=120)
+            print(f"  状态码: {resp.status_code}")
+            print(f"  响应头: {dict(resp.headers)}")
 
-        if 'choices' in result and len(result['choices']) > 0:
-            return result['choices'][0]['message']['content']
-        else:
-            print(f"API 返回错误: {result}")
-            return None
-    except Exception as e:
-        print(f"API 调用失败: {e}")
-        return None
+            if resp.status_code == 200:
+                result = resp.json()
+                if 'choices' in result and len(result['choices']) > 0:
+                    return result['choices'][0]['message']['content']
+                elif 'content' in result:
+                    return result['content']
+            elif resp.status_code == 401:
+                print(f"  认证失败: {resp.text}")
+            elif resp.status_code == 404:
+                print(f"  端点不存在，尝试下一个...")
+                continue
+            else:
+                print(f"  错误响应: {resp.text[:200]}")
+
+        except Exception as e:
+            print(f"  请求异常: {e}")
+
+    return None
 
 
 def generate_html_report(analysis_data, output_dir="reports"):
@@ -78,7 +99,6 @@ def generate_html_report(analysis_data, output_dir="reports"):
     filename = f"微博热搜分析_{date_str}_{time_str}.html"
     filepath = os.path.join(output_dir, filename)
 
-    # 解析数据
     data = analysis_data
     analysis_date = data.get('analysis_date', datetime.now().strftime("%Y-%m-%d"))
     topics = data.get('topics', [])
@@ -153,7 +173,6 @@ def generate_html_report(analysis_data, output_dir="reports"):
         .product-name {{ font-size: 1.1em; font-weight: 600; color: #818cf8; margin-bottom: 12px; }}
         .func-tag {{ display: inline-block; background: rgba(99, 102, 241, 0.2); color: #a5b4fc; padding: 4px 10px; border-radius: 4px; font-size: 0.85em; margin: 3px; }}
         .product-users {{ color: #9ca3af; font-size: 0.9em; margin-top: 12px; }}
-        @media (max-width: 768px) {{ .detail-header {{ flex-direction: column; }} .products-grid {{ grid-template-columns: 1fr; }} }}
     </style>
 </head>
 <body>
@@ -196,6 +215,7 @@ def main():
 
     print(f"[*] API: {base_url}")
     print(f"[*] Model: {model}")
+    print(f"[*] Key: {api_key[:20]}...")
 
     # 1. 获取热搜
     print("\n[*] 获取微博热搜...")
@@ -256,6 +276,8 @@ def main():
     if not result:
         print("API 调用失败")
         sys.exit(1)
+
+    print(f"[*] 收到响应，长度: {len(result)}")
 
     # 4. 解析 JSON
     print("[*] 解析分析结果...")
