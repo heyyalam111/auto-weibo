@@ -42,17 +42,23 @@ def get_weibo_hotsearch(max_count=20):
 
 def call_ai(prompt, api_key, base_url, model):
     """调用 AI API"""
-    try:
-        client = OpenAI(api_key=api_key, base_url=base_url)
-        response = client.chat.completions.create(
-            model=model,
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=4096
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        print(f"API 错误: {e}")
-        return None
+    from openai import OpenAI
+    import time
+
+    for attempt in range(3):
+        try:
+            client = OpenAI(api_key=api_key, base_url=base_url, timeout=120.0)
+            response = client.chat.completions.create(
+                model=model,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=4096
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            print(f"  尝试 {attempt + 1}/3 失败: {e}")
+            if attempt < 2:
+                time.sleep(5)
+    return None
 
 
 def generate_html_report(analysis_data, output_dir="reports"):
