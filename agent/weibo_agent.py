@@ -221,7 +221,7 @@ def generate_html_report(analysis_data, output_dir="reports"):
     <div class="container">
         <header>
             <h1>微博热搜产品创意分析</h1>
-            <p class="date}>{analysis_date} | 数据来源：微博热搜榜</p>
+            <p class="date">{{ analysis_date }} | 数据来源：微博热搜榜</p>
         </header>
         <div class="stats">
             <div class="stat-card"><div class="stat-value">{total}</div><div class="stat-label">热搜总数</div></div>
