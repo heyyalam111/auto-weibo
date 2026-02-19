@@ -1,13 +1,19 @@
 #!/usr/bin/env python3
 """
-微博热搜分析 Agent - 完整版
-使用直接 API 调用 + 手动解析 JSON
+微博热搜分析 Agent - 使用 OpenAI 库
 """
 import os
 import sys
 import json
 import requests
 from datetime import datetime
+
+# 尝试导入 openai 库
+try:
+    from openai import OpenAI
+    HAS_OPENAI = True
+except ImportError:
+    HAS_OPENAI = False
 
 
 def get_weibo_hotsearch(max_count=20):
@@ -40,62 +46,90 @@ def get_weibo_hotsearch(max_count=20):
     return []
 
 
-def call_minimax(prompt, api_key, base_url, model):
-    """调用 MiniMax API"""
+def call_with_openai(prompt, api_key, base_url, model):
+    """使用 OpenAI 库调用"""
+    if not HAS_OPENAI:
+        return None
 
-    # 移除末尾斜杠
+    try:
+        client = OpenAI(
+            api_key=api_key,
+            base_url=base_url,  # 例如: https://api.minimax.chat/v1
+        )
+
+        response = client.chat.completions.create(
+            model=model,
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=4096
+        )
+
+        return response.choices[0].message.content
+    except Exception as e:
+        print(f"  OpenAI API 错误: {e}")
+        return None
+
+
+def call_with_requests(prompt, api_key, base_url, model):
+    """使用 requests 直接调用"""
+
+    # 清理 base_url
     base_url = base_url.rstrip('/')
 
-    # 移除可能的 /anthropic 后缀，因为需要拼接到正确位置
-    if base_url.endswith('/anthropic'):
-        base_url = base_url.replace('/anthropic', '')
+    # 如果 base_url 已经包含 /v1，不要再拼
+    if '/v1' in base_url:
+        # 已经包含 v1，直接拼 chat/completions
+        url = f"{base_url}/chat/completions"
+    else:
+        # 不包含 v1，拼接完整路径
+        url = f"{base_url}/v1/chat/completions"
 
-    # 尝试多种端点格式
-    endpoints = [
-        # 标准 OpenAI 格式
-        f"{base_url}/v1/chat/completions",
-        # 带 anthropic 路径
-        f"{base_url}/anthropic/v1/chat/completions",
-        # MiniMax 可能格式
-        f"{base_url}/api/v1/chat/completions",
-    ]
+    print(f"  使用 URL: {url}")
 
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json"
     }
 
-    for url in endpoints:
-        print(f"  尝试端点: {url}")
-        try:
-            data = {
-                "model": model,
-                "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": 4096
-            }
+    data = {
+        "model": model,
+        "messages": [{"role": "user", "content": prompt}],
+        "max_tokens": 4096
+    }
 
-            resp = requests.post(url, headers=headers, json=data, timeout=120)
-            print(f"  状态码: {resp.status_code}")
+    try:
+        resp = requests.post(url, headers=headers, json=data, timeout=120)
+        print(f"  状态码: {resp.status_code}")
 
-            if resp.status_code == 200:
-                result = resp.json()
-                print(f"  响应: {str(result)[:200]}")
-                if 'choices' in result and len(result['choices']) > 0:
-                    return result['choices'][0]['message']['content']
-                elif 'content' in result:
-                    return result['content']
-            elif resp.status_code == 401:
-                print(f"  认证失败: {resp.text[:100]}")
-            elif resp.status_code == 404:
-                print(f"  端点不存在")
-                continue
-            else:
-                print(f"  错误: {resp.text[:200]}")
+        if resp.status_code == 200:
+            result = resp.json()
+            if 'choices' in result and len(result['choices']) > 0:
+                return result['choices'][0]['message']['content']
+        elif resp.status_code == 401:
+            print(f"  认证失败: {resp.text[:100]}")
+        elif resp.status_code == 404:
+            print(f"  端点不存在")
+        else:
+            print(f"  错误: {resp.text[:200]}")
 
-        except Exception as e:
-            print(f"  请求异常: {e}")
+    except Exception as e:
+        print(f"  请求异常: {e}")
 
     return None
+
+
+def call_minimax(prompt, api_key, base_url, model):
+    """调用 MiniMax API"""
+
+    # 先尝试 OpenAI 库
+    if HAS_OPENAI:
+        print("  尝试使用 OpenAI 库...")
+        result = call_with_openai(prompt, api_key, base_url, model)
+        if result:
+            return result
+        print("  OpenAI 库失败，尝试直接请求...")
+
+    # 回退到 requests
+    return call_with_requests(prompt, api_key, base_url, model)
 
 
 def generate_html_report(analysis_data, output_dir="reports"):
@@ -187,7 +221,7 @@ def generate_html_report(analysis_data, output_dir="reports"):
     <div class="container">
         <header>
             <h1>微博热搜产品创意分析</h1>
-            <p class="date">{analysis_date} | 数据来源：微博热搜榜</p>
+            <p class="date}>{analysis_date} | 数据来源：微博热搜榜</p>
         </header>
         <div class="stats">
             <div class="stat-card"><div class="stat-value">{total}</div><div class="stat-label">热搜总数</div></div>
@@ -218,11 +252,12 @@ def main():
         print("错误: 未设置 ANTHROPIC_API_KEY")
         sys.exit(1)
 
-    base_url = os.environ.get("ANTHROPIC_API_URL", "https://api.minimaxi.com/anthropic")
+    base_url = os.environ.get("ANTHROPIC_API_URL", "https://api.minimaxi.com/v1")
     model = os.environ.get("ANTHROPIC_MODEL", "MiniMax-M2.5")
 
     print(f"[*] API: {base_url}")
     print(f"[*] Model: {model}")
+    print(f"[*] OpenAI库: {'已安装' if HAS_OPENAI else '未安装'}")
 
     # 1. 获取热搜
     print("\n[*] 获取微博热搜...")

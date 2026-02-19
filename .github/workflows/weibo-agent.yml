@@ -28,7 +28,7 @@ jobs:
 
       - name: 安装依赖
         run: |
-          pip install requests
+          pip install requests openai
 
       - name: 执行 Claude Agent
         env:
