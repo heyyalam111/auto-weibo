@@ -41,15 +41,23 @@ def get_weibo_hotsearch(max_count=20):
 
 
 def call_minimax(prompt, api_key, base_url, model):
-    """调用 MiniMax API - 兼容各种格式"""
+    """调用 MiniMax API"""
 
-    # 移除末尾的 /anthropic 如果有的话
+    # 移除末尾斜杠
     base_url = base_url.rstrip('/')
+
+    # 移除可能的 /anthropic 后缀，因为需要拼接到正确位置
+    if base_url.endswith('/anthropic'):
+        base_url = base_url.replace('/anthropic', '')
 
     # 尝试多种端点格式
     endpoints = [
+        # 标准 OpenAI 格式
         f"{base_url}/v1/chat/completions",
-        f"{base_url}/chat/completions",
+        # 带 anthropic 路径
+        f"{base_url}/anthropic/v1/chat/completions",
+        # MiniMax 可能格式
+        f"{base_url}/api/v1/chat/completions",
     ]
 
     headers = {
@@ -68,21 +76,21 @@ def call_minimax(prompt, api_key, base_url, model):
 
             resp = requests.post(url, headers=headers, json=data, timeout=120)
             print(f"  状态码: {resp.status_code}")
-            print(f"  响应头: {dict(resp.headers)}")
 
             if resp.status_code == 200:
                 result = resp.json()
+                print(f"  响应: {str(result)[:200]}")
                 if 'choices' in result and len(result['choices']) > 0:
                     return result['choices'][0]['message']['content']
                 elif 'content' in result:
                     return result['content']
             elif resp.status_code == 401:
-                print(f"  认证失败: {resp.text}")
+                print(f"  认证失败: {resp.text[:100]}")
             elif resp.status_code == 404:
-                print(f"  端点不存在，尝试下一个...")
+                print(f"  端点不存在")
                 continue
             else:
-                print(f"  错误响应: {resp.text[:200]}")
+                print(f"  错误: {resp.text[:200]}")
 
         except Exception as e:
             print(f"  请求异常: {e}")
@@ -215,7 +223,6 @@ def main():
 
     print(f"[*] API: {base_url}")
     print(f"[*] Model: {model}")
-    print(f"[*] Key: {api_key[:20]}...")
 
     # 1. 获取热搜
     print("\n[*] 获取微博热搜...")
