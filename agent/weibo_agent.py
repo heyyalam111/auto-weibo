@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-微博热搜分析 Agent - 简化版
+微博热搜分析 Agent - 完整版
 使用直接 API 调用 + 手动解析 JSON
 """
 import os
@@ -71,7 +71,6 @@ def call_minimax(prompt, api_key, base_url, model):
 
 def generate_html_report(analysis_data, output_dir="reports"):
     """生成HTML报告"""
-    import re
     os.makedirs(output_dir, exist_ok=True)
 
     date_str = datetime.now().strftime("%y%m%d")
@@ -261,9 +260,7 @@ def main():
     # 4. 解析 JSON
     print("[*] 解析分析结果...")
 
-    # 尝试提取 JSON
     try:
-        # 找到 JSON 开始和结束
         json_start = result.find('{')
         json_end = result.rfind('}') + 1
 
