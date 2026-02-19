@@ -252,17 +252,28 @@ def main():
     # 4. 解析 JSON
     print("[*] 解析分析结果...")
 
+    # 清理响应：移除 thinking 标签
+    cleaned = result
+    if '</think>' in cleaned:
+        cleaned = cleaned.split('</think>')[-1]
+    if '<thinking>' in cleaned:
+        cleaned = cleaned.split('<thinking>')[-1]
+    cleaned = cleaned.strip()
+
+    print(f"[*] 清理后长度: {len(cleaned)}")
+
     try:
-        json_start = result.find('{')
-        json_end = result.rfind('}') + 1
+        # 尝试提取 JSON
+        json_start = cleaned.find('{')
+        json_end = cleaned.rfind('}') + 1
         if json_start >= 0 and json_end > json_start:
-            json_str = result[json_start:json_end]
+            json_str = cleaned[json_start:json_end]
             analysis_data = json.loads(json_str)
         else:
-            analysis_data = json.loads(result)
+            analysis_data = json.loads(cleaned)
     except json.JSONDecodeError as e:
         print(f"JSON 解析失败: {e}")
-        print(f"原始返回: {result[:500]}")
+        print(f"清理后内容前500字: {cleaned[:500]}")
         sys.exit(1)
 
     # 5. 生成报告
