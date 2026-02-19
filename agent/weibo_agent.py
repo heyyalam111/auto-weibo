@@ -71,7 +71,8 @@ def generate_html_report(analysis_data, output_dir="reports"):
     filepath = os.path.join(output_dir, filename)
 
     data = analysis_data
-    analysis_date = data.get('analysis_date', datetime.now().strftime("%Y-%m-%d"))
+    # 确保使用最新时间
+    analysis_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     topics = data.get('topics', [])
 
     total = len(topics)
