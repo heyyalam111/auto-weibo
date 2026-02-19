@@ -1,0 +1,61 @@
+name: 微博热搜智能分析 (Claude Agent)
+
+on:
+  schedule:
+    # 每天 8:00 UTC = 16:00 北京时间
+    - cron: '0 8 * * *'
+  # 手动触发
+  workflow_dispatch:
+    inputs:
+      manual_topic:
+        description: '手动指定分析话题'
+        required: false
+        default: ''
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Python 环境
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 安装依赖
+        run: |
+          pip install anthropic requests jinja2
+
+      - name: 执行 Claude Agent
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_API_URL: ${{ secrets.ANTHROPIC_API_URL }}
+          ANTHROPIC_MODEL: ${{ secrets.ANTHROPIC_MODEL }}
+          TIANXING_API_KEY: ${{ secrets.TIANXING_API_KEY }}
+        run: |
+          python agent/weibo_agent.py
+        continue-on-error: true
+
+      - name: 上传报告
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: weibo-report-${{ github.run_number }}
+          path: reports/*.html
+          retention-days: 30
+
+      - name: 生成执行摘要
+        if: always()
+        run: |
+          echo "## 📊 执行摘要" >> $GITHUB_STEP_SUMMARY
+          echo "- 执行时间: ${{ github.run_started_at }}" >> $GITHUB_STEP_SUMMARY
+          echo "- 工作流ID: ${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY
+          if [ -f reports/*.html ]; then
+            echo "- 状态: ✅ 报告已生成" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- 状态: ⚠️ 报告生成失败，请查看日志" >> $GITHUB_STEP_SUMMARY
+          fi
