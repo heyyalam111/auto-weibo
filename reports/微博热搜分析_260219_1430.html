@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>微博热搜产品创意分析报告</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e4e4e7;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            background: linear-gradient(90deg, #ffd700, #ff8c00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .date {
+            color: #9ca3af;
+            font-size: 1.1em;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            color: #9ca3af;
+            font-size: 0.95em;
+        }
+
+        .stat-card.total .stat-value { color: #60a5fa; }
+        .stat-card.avg .stat-value { color: #a78bfa; }
+        .stat-card.excellent .stat-value { color: #ffd700; }
+        .stat-card.good .stat-value { color: #34d399; }
+
+        .section-title {
+            font-size: 1.8em;
+            margin-bottom: 24px;
+            padding-left: 16px;
+            border-left: 4px solid #ffd700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .top-rank {
+            display: grid;
+            gap: 16px;
+            margin-bottom: 50px;
+        }
+
+        .rank-item {
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+            padding: 20px 24px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: all 0.3s;
+        }
+
+        .rank-item:hover {
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(255,215,0,0.3);
+        }
+
+        .rank-num {
+            font-size: 1.8em;
+            font-weight: bold;
+            width: 50px;
+            text-align: center;
+        }
+
+        .rank-num.gold { color: #ffd700; }
+        .rank-num.silver { color: #c0c0c0; }
+        .rank-num.bronze { color: #cd7f32; }
+
+        .rank-content {
+            flex: 1;
+        }
+
+        .rank-topic {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .rank-bg {
+            color: #9ca3af;
+            font-size: 0.9em;
+        }
+
+        .rank-score {
+            font-size: 1.6em;
+            font-weight: bold;
+            padding: 8px 20px;
+            border-radius: 8px;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .score-high { background: linear-gradient(135deg, #ffd700, #ff8c00); color: #1a1a2e; }
+        .score-mid { background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: #fff; }
+        .score-low { background: rgba(255,255,255,0.1); color: #9ca3af; }
+
+        .detail-section {
+            margin-bottom: 50px;
+        }
+
+        .detail-card {
+            background: rgba(255,255,255,0.03);
+            border-radius: 16px;
+            padding: 28px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .detail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .detail-topic {
+            font-size: 1.3em;
+            font-weight: 600;
+            flex: 1;
+        }
+
+        .detail-score {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .score-badge {
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+
+        .score-bar {
+            display: flex;
+            gap: 4px;
+            margin: 12px 0;
+        }
+
+        .score-segment {
+            height: 8px;
+            border-radius: 4px;
+            transition: height 0.3s;
+        }
+
+        .detail-bg {
+            color: #9ca3af;
+            margin-bottom: 20px;
+            line-height: 1.6;
+            padding: 12px 16px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            border-left: 3px solid #6366f1;
+        }
+
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 16px;
+        }
+
+        .product-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.08);
+            transition: all 0.3s;
+        }
+
+        .product-card:hover {
+            border-color: #6366f1;
+            transform: translateY(-3px);
+        }
+
+        .product-name {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #818cf8;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .product-name::before {
+            content: "📱";
+        }
+
+        .product-funcs {
+            margin-bottom: 12px;
+        }
+
+        .func-tag {
+            display: inline-block;
+            background: rgba(99, 102, 241, 0.2);
+            color: #a5b4fc;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            margin: 3px;
+        }
+
+        .product-users {
+            color: #9ca3af;
+            font-size: 0.9em;
+        }
+
+        .product-users strong {
+            color: #34d399;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 40px 0;
+            color: #6b7280;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            margin-top: 40px;
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 1.8em; }
+            .stats { grid-template-columns: repeat(2, 1fr); }
+            .rank-item { flex-direction: column; text-align: center; }
+            .detail-header { flex-direction: column; }
+            .products-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔥 微博热搜产品创意分析</h1>
+            <p class="date">2026年2月19日 | 数据来源：微博热搜榜</p>
+        </header>
+
+        <div class="stats">
+            <div class="stat-card total">
+                <div class="stat-value">20</div>
+                <div class="stat-label">热搜总数</div>
+            </div>
+            <div class="stat-card avg">
+                <div class="stat-value">65.4</div>
+                <div class="stat-label">平均评分</div>
+            </div>
+            <div class="stat-card excellent">
+                <div class="stat-value">7</div>
+                <div class="stat-label">优秀项目 (≥70)</div>
+            </div>
+            <div class="stat-card good">
+                <div class="stat-value">8</div>
+                <div class="stat-label">良好项目 (60-69)</div>
+            </div>
+        </div>
+
+        <h2 class="section-title">🏆 高分热点排行 TOP 10</h2>
+        <div class="top-rank">
+            <div class="rank-item">
+                <div class="rank-num gold">1</div>
+                <div class="rank-content">
+                    <div class="rank-topic">春节档佳片云集总有一款适合你</div>
+                    <div class="rank-bg">2026春节档多部大片上映，观众选择困难</div>
+                </div>
+                <div class="rank-score score-high">82</div>
+            </div>
+            <div class="rank-item">
+                <div class="rank-num silver">2</div>
+                <div class="rank-content">
+                    <div class="rank-topic">飞驰人生3同期票房超哪吒2</div>
+                    <div class="rank-bg">2026春节档电影竞争激烈，两部电影引发票房对比讨论</div>
+                </div>
+                <div class="rank-score score-high">78</div>
+            </div>
+            <div class="rank-item">
+                <div class="rank-num bronze">3</div>
+                <div class="rank-content">
+                    <div class="rank-topic">玩手机是一件很私人的事情</div>
+                    <div class="rank-bg">引发关于个人隐私、数字生活边界讨论</div>
+                </div>
+                <div class="rank-score score-high">75</div>
+            </div>
+            <div class="rank-item">
+                <div class="rank-num">4</div>
+                <div class="rank-content">
+                    <div class="rank-topic">苏翊鸣说储备了没有人实现过的动作</div>
+                    <div class="rank-bg">中国单板滑雪运动员苏翊鸣备战状态受关注</div>
+                </div>
+                <div class="rank-score score-mid">72</div>
+            </div>
+            <div class="rank-item">
+                <div class="rank-num">5</div>
+                <div class="rank-content">
+                    <div class="rank-topic">宜城烟花爆燃事故12名遇难者身份核实</div>
+                    <div class="rank-bg">安全事故引发关注，安全生产话题</div>
+                </div>
+                <div class="rank-score score-mid">72</div>
+            </div>
+            <div class="rank-item">
+                <div class="rank-num">6</div>
+                <div class="rank-content">
+                    <div class="rank-topic">香港尖沙咀市民排队看英歌舞</div>
+                    <div class="rank-bg">传统文化活动引发关注，英歌舞表演受热捧</div>
+                </div>
+                <div class="rank-score score-mid">70</div>
+            </div>
+            <div class="rank-item">
+                <div class="rank-num">7</div>
+                <div class="rank-content">
+                    <div class="rank-topic">以旅行见世界</div>
+                    <div class="rank-bg">旅行话题，春节出游受关注</div>
+                </div>
+                <div class="rank-score score-mid">70</div>
+            </div>
+            <div class="rank-item">
+                <div class="rank-num">8</div>
+                <div class="rank-content">
+                    <div class="rank-topic">我承认之前对吴京太大声了</div>
+                    <div class="rank-bg">吴京相关话题引发讨论，反映明星效应</div>
+                </div>
+                <div class="rank-score score-mid">68</div>
+            </div>
+            <div class="rank-item">
+                <div class="rank-num">9</div>
+                <div class="rank-content">
+                    <div class="rank-topic">林孝埈已为中国短道燃尽所有</div>
+                    <div class="rank-bg">归化运动员话题，中国短道速滑队受关注</div>
+                </div>
+                <div class="rank-score score-mid">68</div>
+            </div>
+            <div class="rank-item">
+                <div class="rank-num">10</div>
+                <div class="rank-content">
+                    <div class="rank-topic">妻子回应丈夫初二坐丈人腿上告状</div>
+                    <div class="rank-bg">家庭矛盾话题引发热议，涉及婚姻关系、春节习俗讨论</div>
+                </div>
+                <div class="rank-score score-mid">65</div>
+            </div>
+        </div>
+
+        <h2 class="section-title">📱 详细分析列表</h2>
+        <div class="detail-section">
+            <div class="detail-card">
+                <div class="detail-header">
+                    <div class="detail-topic">1. 飞驰人生3同期票房超哪吒2</div>
+                    <div class="detail-score">
+                        <span class="score-badge score-high">78分</span>
+                    </div>
+                </div>
+                <div class="score-bar">
+                    <div class="score-segment" style="width: 71%; background: linear-gradient(90deg, #f59e0b, #d97706);"></div>
+                    <div class="score-segment" style="width: 29%; background: linear-gradient(90deg, #6366f1, #4f46e5);"></div>
+                </div>
+                <div class="detail-bg">背景：2026春节档电影竞争激烈，《飞驰人生3》与《哪吒2》同期上映，引发票房对比讨论</div>
+                <div class="products-grid">
+                    <div class="product-card">
+                        <div class="product-name">票房冠军预测工具</div>
+                        <div class="product-funcs">
+                            <span class="func-tag">实时票房追踪</span>
+                            <span class="func-tag">AI预测分析</span>
+                            <span class="func-tag">历史数据对比</span>
+                            <span class="func-tag">档期分析</span>
+                        </div>
+                        <div class="product-users">目标用户：<strong>电影爱好者、投资者</strong></div>
+                    </div>
+                    <div class="product-card">
+                        <div class="product-name">春节档观影指南</div>
+                        <div class="product-funcs">
+                            <span class="func-tag">电影评分对比</span>
+                            <span class="func-tag">场次查询</span>
+                            <span class="func-tag">优惠购票</span>
+                            <span class="func-tag">口碑分析</span>
+                        </div>
+                        <div class="product-users">目标用户：<strong>春节观影人群</strong></div>
+                    </div>
+                    <div class="product-card">
+                        <div class="product-name">影视投资助手</div>
+                        <div class="product-funcs">
+                            <span class="func-tag">投资回报分析</span>
+                            <span class="func-tag">明星效应评估</span>
+                            <span class="func-tag">IP价值分析</span>
+                        </div>
+                        <div class="product-users">目标用户：<strong>影视投资人</strong></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-card">
+                <div class="detail-header">
+                    <div class="detail-topic">2. 春节档佳片云集总有一款适合你</div>
+                    <div class="detail-score">
+                        <span class="score-badge score-high">82分</span>
+                    </div>
+                </div>
+                <div class="score-bar">
+                    <div class="score-segment" style="width: 70%; background: linear-gradient(90deg, #f59e0b, #d97706);"></div>
+                    <div class="score-segment" style="width: 30%; background: linear-gradient(90deg, #6366f1, #4f46e5);"></div>
+                </div>
+                <div class="detail-bg">背景：2026春节档多部大片上映，观众选择困难</div>
+                <div class="products-grid">
+                    <div class="product-card">
+                        <div class="product-name">个性化观影推荐</div>
+                        <div class="product-funcs">
+                            <span class="func-tag">AI推荐</span>
+                            <span class="func-tag">兴趣匹配</span>
+                            <span class="func-tag">社交观影</span>
+                        </div>
+                        <div class="product-users">目标用户：<strong>电影观众</strong></div>
+                    </div>
+                    <div class="product-card">
+                        <div class="product-name">档期电影日历</div>
+                        <div class="product-funcs">
+                            <span class="func-tag">上映提醒</span>
+                            <span class="func-tag">预告片合集</span>
+                            <span class="func-tag">影评聚合</span>
+                        </div>
+                        <div class="product-users">目标用户：<strong>影迷</strong></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-card">
+                <div class="detail-header">
+                    <div class="detail-topic">3. 玩手机是一件很私人的事情</div>
+                    <div class="detail-score">
+                        <span class="score-badge score-high">75分</span>
+                    </div>
+                </div>
+                <div class="score-bar">
+                    <div class="score-segment" style="width: 63%; background: linear-gradient(90deg, #f59e0b, #d97706);"></div>
+                    <div class="score-segment" style="width: 37%; background: linear-gradient(90deg, #6366f1, #4f46e5);"></div>
+                </div>
+                <div class="detail-bg">背景：引发关于个人隐私、数字生活边界讨论</div>
+                <div class="products-grid">
+                    <div class="product-card">
+                        <div class="product-name">专注时刻APP</div>
+                        <div class="product-funcs">
+                            <span class="func-tag">勿扰模式</span>
+                            <span class="func-tag">屏幕时间管理</span>
+                            <span class="func-tag">专注统计</span>
+                        </div>
+                        <div class="product-users">目标用户：<strong>学生、上班族</strong></div>
+                    </div>
+                    <div class="product-card">
+                        <div class="product-name">数字健康助手</div>
+                        <div class="product-funcs">
+                            <span class="func-tag">用眼提醒</span>
+                            <span class="func-tag">姿势矫正</span>
+                            <span class="func-tag">健康报告</span>
+                        </div>
+                        <div class="product-users">目标用户：<strong>手机依赖人群</strong></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-card">
+                <div class="detail-header">
+                    <div class="detail-topic">4. 苏翊鸣说储备了没有人实现过的动作</div>
+                    <div class="detail-score">
+                        <span class="score-badge score-mid">72分</span>
+                    </div>
+                </div>
+                <div class="score-bar">
+                    <div class="score-segment" style="width: 63%; background: linear-gradient(90deg, #3b82f6, #1d4ed8);"></div>
+                    <div class="score-segment" style="width: 37%; background: linear-gradient(90deg, #6366f1, #4f46e5);"></div>
+                </div>
+                <div class="detail-bg">背景：中国单板滑雪运动员苏翊鸣备战状态受关注</div>
+                <div class="products-grid">
+                    <div class="product-card">
+                        <div class="product-name">冰雪运动教学</div>
+                        <div class="product-funcs">
+                            <span class="func-tag">动作教程</span>
+                            <span class="func-tag">训练计划</span>
+                            <span class="func-tag">名师指导</span>
+                        </div>
+                        <div class="product-users">目标用户：<strong>冰雪运动爱好者</strong></div>
+                    </div>
+                    <div class="product-card">
+                        <div class="product-name">运动员动态追踪</div>
+                        <div class="product-funcs">
+                            <span class="func-tag">赛事日历</span>
+                            <span class="func-tag">成绩记录</span>
+                            <span class="func-tag">训练花絮</span>
+                        </div>
+                        <div class="product-users">目标用户：<strong>体育迷</strong></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-card">
+                <div class="detail-header">
+                    <div class="detail-topic">5. 宜城烟花爆燃事故12名遇难者身份核实</div>
+                    <div class="detail-score">
+                        <span class="score-badge score-mid">72分</span>
+                    </div>
+                </div>
+                <div class="score-bar">
+                    <div class="score-segment" style="width: 65%; background: linear-gradient(90deg, #3b82f6, #1d4ed8);"></div>
+                    <div class="score-segment" style="width: 35%; background: linear-gradient(90deg, #6366f1, #4f46e5);"></div>
+                </div>
+                <div class="detail-bg">背景：安全事故引发关注，安全生产话题</div>
+                <div class="products-grid">
+                    <div class="product-card">
+                        <div class="product-name">安全隐患上报</div>
+                        <div class="product-funcs">
+                            <span class="func-tag">一键上报</span>
+                            <span class="func-tag">位置定位</span>
+                            <span class="func-tag">处理追踪</span>
+                        </div>
+                        <div class="product-users">目标用户：<strong>普通市民</strong></div>
+                    </div>
+                    <div class="product-card">
+                        <div class="product-name">安全生产管理</div>
+                        <div class="product-funcs">
+                            <span class="func-tag">风险评估</span>
+                            <span class="func-tag">培训系统</span>
+                            <span class="func-tag">检查清单</span>
+                        </div>
+                        <div class="product-users">目标用户：<strong>企业管理者</strong></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-card">
+                <div class="detail-header">
+                    <div class="detail-topic">6. 以旅行见世界</div>
+                    <div class="detail-score">
+                        <span class="score-badge score-mid">70分</span>
+                    </div>
+                </div>
+                <div class="score-bar">
+                    <div class="score-segment" style="width: 62%; background: linear-gradient(90deg, #3b82f6, #1d4ed8);"></div>
+                    <div class="score-segment" style="width: 38%; background: linear-gradient(90deg, #6366f1, #4f46e5);"></div>
+                </div>
+                <div class="detail-bg">背景：旅行话题，春节出游受关注</div>
+                <div class="products-grid">
+                    <div class="product-card">
+                        <div class="product-name">旅行规划助手</div>
+                        <div class="product-funcs">
+                            <span class="func-tag">行程定制</span>
+                            <span class="func-tag">预算计算</span>
+                            <span class="func-tag">避坑指南</span>
+                        </div>
+                        <div class="product-users">目标用户：<strong>旅行者</strong></div>
+                    </div>
+                    <div class="product-card">
+                        <div class="product-name">旅行社区</div>
+                        <div class="product-funcs">
+                            <span class="func-tag">游记分享</span>
+                            <span class="func-tag">问答互动</span>
+                            <span class="func-tag">结伴出行</span>
+                        </div>
+                        <div class="product-users">目标用户：<strong>背包客</strong></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-card">
+                <div class="detail-header">
+                    <div class="detail-topic">7. 香港尖沙咀市民排队看英歌舞</div>
+                    <div class="detail-score">
+                        <span class="score-badge score-mid">70分</span>
+                    </div>
+                </div>
+                <div class="score-bar">
+                    <div class="score-segment" style="width: 58%; background: linear-gradient(90deg, #3b82f6, #1d4ed8);"></div>
+                    <div class="score-segment" style="width: 42%; background: linear-gradient(90deg, #6366f1, #4f46e5);"></div>
+                </div>
+                <div class="detail-bg">背景：传统文化活动引发关注，英歌舞表演受热捧</div>
+                <div class="products-grid">
+                    <div class="product-card">
+                        <div class="product-name">非遗文化体验</div>
+                        <div class="product-funcs">
+                            <span class="func-tag">活动日历</span>
+                            <span class="func-tag">线上观看</span>
+                            <span class="func-tag">文化课堂</span>
+                        </div>
+                        <div class="product-users">目标用户：<strong>文化爱好者</strong></div>
+                    </div>
+                    <div class="product-card">
+                        <div class="product-name">传统表演直播平台</div>
+                        <div class="product-funcs">
+                            <span class="func-tag">多视角直播</span>
+                            <span class="func-tag">弹幕互动</span>
+                            <span class="func-tag">回看功能</span>
+                        </div>
+                        <div class="product-users">目标用户：<strong>传统文化粉丝</strong></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>© 2026 微博热搜产品创意分析器 | 数据来源：微博热搜榜单</p>
+        </div>
+    </div>
+</body>
+</html>

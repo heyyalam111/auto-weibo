@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>微博热搜产品创意分析报告 - 2026-02-10</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', 'PingFang SC', 'Hiragino Sans GB', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e4e4e4;
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+            border-radius: 20px;
+            margin-bottom: 40px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #a0a0a0;
+            font-size: 1.1em;
+        }
+
+        .overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            color: #a0a0a0;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+
+        .section-title {
+            font-size: 1.8em;
+            margin: 40px 0 20px 0;
+            padding-left: 15px;
+            border-left: 5px solid #667eea;
+        }
+
+        .topic-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            animation: fadeInUp 0.5s ease;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .topic-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .topic-card.excellent {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 165, 0, 0.1) 100%);
+            border: 2px solid rgba(255, 215, 0, 0.5);
+        }
+
+        .topic-card.good {
+            background: linear-gradient(135deg, rgba(66, 153, 225, 0.15) 0%, rgba(49, 130, 206, 0.1) 100%);
+            border: 2px solid rgba(66, 153, 225, 0.5);
+        }
+
+        .topic-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .topic-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #ffffff;
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .topic-rank {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .score-section {
+            margin: 25px 0;
+        }
+
+        .score-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 0.95em;
+        }
+
+        .score-bar-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            height: 30px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .score-bar {
+            height: 100%;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 15px;
+            font-weight: bold;
+            transition: width 1s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .score-bar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% {
+                left: -100%;
+            }
+
+            100% {
+                left: 100%;
+            }
+        }
+
+        .score-bar.excellent {
+            background: linear-gradient(90deg, #ffd700 0%, #ffaa00 100%);
+        }
+
+        .score-bar.good {
+            background: linear-gradient(90deg, #4299e1 0%, #3182ce 100%);
+        }
+
+        .score-bar.normal {
+            background: linear-gradient(90deg, #718096 0%, #4a5568 100%);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .badge.excellent {
+            background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%);
+            color: #1a1a2e;
+        }
+
+        .badge.good {
+            background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+            color: white;
+        }
+
+        .timeline {
+            margin: 25px 0;
+            padding-left: 20px;
+            border-left: 3px solid rgba(102, 126, 234, 0.3);
+        }
+
+        .timeline-item {
+            margin-bottom: 15px;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -23px;
+            top: 5px;
+            width: 10px;
+            height: 10px;
+            background: #667eea;
+            border-radius: 50%;
+            border: 3px solid #1a1a2e;
+        }
+
+        .product-ideas {
+            margin-top: 25px;
+        }
+
+        .product-card {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.05) 100%);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .product-card:hover {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.1) 100%);
+            border-color: rgba(102, 126, 234, 0.4);
+        }
+
+        .product-name {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 12px;
+        }
+
+        .product-section {
+            margin-bottom: 12px;
+        }
+
+        .product-section-title {
+            font-weight: bold;
+            color: #a0a0a0;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+
+        .product-features {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .product-features li {
+            padding: 5px 0 5px 20px;
+            position: relative;
+        }
+
+        .product-features li::before {
+            content: '▸';
+            position: absolute;
+            left: 0;
+            color: #667eea;
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: #a0a0a0;
+            margin-top: 60px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .topic-header {
+                flex-direction: column;
+            }
+
+            .topic-title {
+                min-width: 100%;
+            }
+
+            .overview {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 微博热搜产品创意分析报告</h1>
+            <p class="subtitle">分析日期: 2026-02-10</p>
+        </header>
+
+        <div class="overview">
+            <div class="stat-card">
+                <div class="stat-number">3</div>
+                <div class="stat-label">热搜话题总数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">1</div>
+                <div class="stat-label">优秀项目 (≥80分)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">1</div>
+                <div class="stat-label">良好项目 (60-79分)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">56.3</div>
+                <div class="stat-label">平均评分</div>
+            </div>
+        </div>
+
+        <h2 class="section-title">🏆 高分热点排行</h2>
+        <div id="top-topics">
+            <div class="topic-card excellent" style="animation-delay: 0s;">
+                <div class="topic-header">
+                    <div class="topic-title">AI绘画工具爆火</div>
+                    <div class="topic-rank">排名 #1</div>
+                </div>
+
+                <div class="score-section">
+                    <div class="score-label">
+                        <span>综合评分 <span class="badge excellent">优秀</span></span>
+                        <span><strong>63.6</strong> / 100</span>
+                    </div>
+                    <div class="score-bar-container">
+                        <div class="score-bar excellent" style="width: 63.6%">
+                            63.6分
+                        </div>
+                    </div>
+                    <div style="margin-top: 10px; font-size: 0.9em; color: #a0a0a0;">
+                        有趣度: 75/80 | 有用度: 18/20
+                    </div>
+                </div>
+
+                <div
+                    style="margin: 20px 0; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 10px; border-left: 3px solid #667eea;">
+                    <strong style="color: #667eea;">背景信息:</strong><br>
+                    近期多款AI绘画工具在社交媒体上引发热议,用户可以通过简单的文字描述生成精美的艺术作品。这一技术降低了艺术创作的门槛,吸引了大量普通用户尝试。
+                </div>
+
+                <div class="timeline">
+                    <h3 style="margin-bottom: 15px; color: #a0a0a0; font-size: 1em;">📅 事件脉络</h3>
+                    <div class="timeline-item">某AI绘画工具在海外上线,引发关注</div>
+                    <div class="timeline-item">国内多家公司推出类似产品</div>
+                    <div class="timeline-item">用户生成的AI艺术作品在社交媒体刷屏</div>
+                    <div class="timeline-item">艺术家和版权专家开始讨论AI创作的版权问题</div>
+                </div>
+
+                <div class="product-ideas">
+                    <h3 style="margin-bottom: 15px; color: #a0a0a0; font-size: 1em;">💡 产品创意</h3>
+                    <div class="product-card">
+                        <div class="product-name">AI头像生成器</div>
+                        <div class="product-section">
+                            <div class="product-section-title">核心功能</div>
+                            <ul class="product-features">
+                                <li>一键生成多风格个人头像</li>
+                                <li>支持职业照、卡通、艺术风格</li>
+                                <li>批量导出高清图片</li>
+                                <li>社交媒体一键分享</li>
+                            </ul>
+                        </div>
+                        <div class="product-section">
+                            <div class="product-section-title">目标用户</div>
+                            <div>需要更新社交媒体头像的年轻用户(18-35岁),特别是职场新人和自媒体从业者</div>
+                        </div>
+                    </div>
+                    <div class="product-card">
+                        <div class="product-name">AI表情包工厂</div>
+                        <div class="product-section">
+                            <div class="product-section-title">核心功能</div>
+                            <ul class="product-features">
+                                <li>根据用户照片生成个性化表情包</li>
+                                <li>支持多种情绪和场景</li>
+                                <li>表情包套装一键导出</li>
+                                <li>支持GIF动图生成</li>
+                            </ul>
+                        </div>
+                        <div class="product-section">
+                            <div class="product-section-title">目标用户</div>
+                            <div>喜欢在聊天中使用表情包的年轻用户,尤其是00后群体</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h2 class="section-title">📱 详细分析列表</h2>
+        <div id="all-topics">
+            <!-- 第一个话题已在上面展示 -->
+
+            <div class="topic-card good" style="animation-delay: 0.1s;">
+                <div class="topic-header">
+                    <div class="topic-title">年轻人开始流行"搭子社交"</div>
+                    <div class="topic-rank">排名 #5</div>
+                </div>
+
+                <div class="score-section">
+                    <div class="score-label">
+                        <span>综合评分 <span class="badge good">良好</span></span>
+                        <span><strong>57.6</strong> / 100</span>
+                    </div>
+                    <div class="score-bar-container">
+                        <div class="score-bar good" style="width: 57.6%">
+                            57.6分
+                        </div>
+                    </div>
+                    <div style="margin-top: 10px; font-size: 0.9em; color: #a0a0a0;">
+                        有趣度: 68/80 | 有用度: 16/20
+                    </div>
+                </div>
+
+                <div
+                    style="margin: 20px 0; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 10px; border-left: 3px solid #667eea;">
+                    <strong style="color: #667eea;">背景信息:</strong><br>
+                    "搭子"指的是在特定场景下一起做某件事的伙伴,如饭搭子、运动搭子、旅游搭子等。这种轻量化的社交方式受到年轻人欢迎,因为它没有传统友谊的负担,更加灵活自由。
+                </div>
+
+                <div class="timeline">
+                    <h3 style="margin-bottom: 15px; color: #a0a0a0; font-size: 1em;">📅 事件脉络</h3>
+                    <div class="timeline-item">社交媒体上出现"搭子"相关话题讨论</div>
+                    <div class="timeline-item">多个城市出现线下"搭子"匹配活动</div>
+                    <div class="timeline-item">年轻人分享自己的"搭子"故事</div>
+                    <div class="timeline-item">心理学家分析这一现象背后的社会原因</div>
+                </div>
+
+                <div class="product-ideas">
+                    <h3 style="margin-bottom: 15px; color: #a0a0a0; font-size: 1em;">💡 产品创意</h3>
+                    <div class="product-card">
+                        <div class="product-name">搭子匹配平台</div>
+                        <div class="product-section">
+                            <div class="product-section-title">核心功能</div>
+                            <ul class="product-features">
+                                <li>基于兴趣和地理位置匹配搭子</li>
+                                <li>支持多种场景(吃饭、运动、学习、旅游)</li>
+                                <li>安全认证和评价系统</li>
+                                <li>活动发起和报名功能</li>
+                            </ul>
+                        </div>
+                        <div class="product-section">
+                            <div class="product-section-title">目标用户</div>
+                            <div>独居的年轻上班族和大学生,希望找到志同道合的伙伴但不想建立深度社交关系</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="topic-card" style="animation-delay: 0.2s;">
+                <div class="topic-header">
+                    <div class="topic-title">智能手表新功能:健康监测再升级</div>
+                    <div class="topic-rank">排名 #12</div>
+                </div>
+
+                <div class="score-section">
+                    <div class="score-label">
+                        <span>综合评分</span>
+                        <span><strong>47.8</strong> / 100</span>
+                    </div>
+                    <div class="score-bar-container">
+                        <div class="score-bar normal" style="width: 47.8%">
+                            47.8分
+                        </div>
+                    </div>
+                    <div style="margin-top: 10px; font-size: 0.9em; color: #a0a0a0;">
+                        有趣度: 55/80 | 有用度: 19/20
+                    </div>
+                </div>
+
+                <div
+                    style="margin: 20px 0; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 10px; border-left: 3px solid #667eea;">
+                    <strong style="color: #667eea;">背景信息:</strong><br>
+                    多家科技公司发布新款智能手表,新增血糖监测、睡眠呼吸暂停检测等健康功能。这些功能让智能手表从运动配件逐渐转变为健康管理工具。
+                </div>
+
+                <div class="timeline">
+                    <h3 style="margin-bottom: 15px; color: #a0a0a0; font-size: 1em;">📅 事件脉络</h3>
+                    <div class="timeline-item">某品牌发布新款智能手表,主打健康监测</div>
+                    <div class="timeline-item">医疗专家评估智能手表健康监测的准确性</div>
+                    <div class="timeline-item">用户分享使用体验和健康改善案例</div>
+                    <div class="timeline-item">监管部门关注智能设备的医疗功能合规性</div>
+                </div>
+
+                <div class="product-ideas">
+                    <h3 style="margin-bottom: 15px; color: #a0a0a0; font-size: 1em;">💡 产品创意</h3>
+                    <div class="product-card">
+                        <div class="product-name">家庭健康管家</div>
+                        <div class="product-section">
+                            <div class="product-section-title">核心功能</div>
+                            <ul class="product-features">
+                                <li>整合多设备健康数据(手表、体重秤、血压计)</li>
+                                <li>AI健康分析和建议</li>
+                                <li>家庭成员健康数据共享</li>
+                                <li>异常指标预警和就医提醒</li>
+                            </ul>
+                        </div>
+                        <div class="product-section">
+                            <div class="product-section-title">目标用户</div>
+                            <div>关注家人健康的中年用户(35-55岁),特别是有老人或慢性病患者的家庭</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>由 Claude Code 微博热搜产品创意分析器自动生成</p>
+            <p style="margin-top: 10px; font-size: 0.9em;">Powered by AI · 2026-02-10</p>
+        </footer>
+    </div>
+</body>
+
+</html>

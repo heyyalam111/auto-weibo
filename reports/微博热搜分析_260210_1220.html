@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>微博热搜产品创意分析报告 - 2026-02-10</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', 'PingFang SC', 'Hiragino Sans GB', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e4e4e4;
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+            border-radius: 20px;
+            margin-bottom: 40px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #a0a0a0;
+            font-size: 1.1em;
+        }
+
+        .overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, rgba(102,126,234,0.1) 0%, rgba(118,75,162,0.1) 100%);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            border: 1px solid rgba(102,126,234,0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(102,126,234,0.3);
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            color: #a0a0a0;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+
+        .section-title {
+            font-size: 1.8em;
+            margin: 40px 0 20px 0;
+            padding-left: 15px;
+            border-left: 5px solid #667eea;
+        }
+
+        .topic-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            animation: fadeInUp 0.5s ease;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .topic-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+
+        .topic-card.excellent {
+            background: linear-gradient(135deg, rgba(255,215,0,0.15) 0%, rgba(255,165,0,0.1) 100%);
+            border: 2px solid rgba(255,215,0,0.5);
+        }
+
+        .topic-card.good {
+            background: linear-gradient(135deg, rgba(66,153,225,0.15) 0%, rgba(49,130,206,0.1) 100%);
+            border: 2px solid rgba(66,153,225,0.5);
+        }
+
+        .topic-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .topic-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #ffffff;
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .topic-rank {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .score-section {
+            margin: 25px 0;
+        }
+
+        .score-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 0.95em;
+        }
+
+        .score-bar-container {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            height: 30px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .score-bar {
+            height: 100%;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 15px;
+            font-weight: bold;
+            transition: width 1s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .score-bar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .score-bar.excellent {
+            background: linear-gradient(90deg, #ffd700 0%, #ffaa00 100%);
+        }
+
+        .score-bar.good {
+            background: linear-gradient(90deg, #4299e1 0%, #3182ce 100%);
+        }
+
+        .score-bar.normal {
+            background: linear-gradient(90deg, #718096 0%, #4a5568 100%);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .badge.excellent {
+            background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%);
+            color: #1a1a2e;
+        }
+
+        .badge.good {
+            background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+            color: white;
+        }
+
+        .timeline {
+            margin: 25px 0;
+            padding-left: 20px;
+            border-left: 3px solid rgba(102,126,234,0.3);
+        }
+
+        .timeline-item {
+            margin-bottom: 15px;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -23px;
+            top: 5px;
+            width: 10px;
+            height: 10px;
+            background: #667eea;
+            border-radius: 50%;
+            border: 3px solid #1a1a2e;
+        }
+
+        .product-ideas {
+            margin-top: 25px;
+        }
+
+        .product-card {
+            background: linear-gradient(135deg, rgba(102,126,234,0.1) 0%, rgba(118,75,162,0.05) 100%);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(102,126,234,0.2);
+            transition: all 0.3s ease;
+        }
+
+        .product-card:hover {
+            background: linear-gradient(135deg, rgba(102,126,234,0.15) 0%, rgba(118,75,162,0.1) 100%);
+            border-color: rgba(102,126,234,0.4);
+        }
+
+        .product-name {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 12px;
+        }
+
+        .product-section {
+            margin-bottom: 12px;
+        }
+
+        .product-section-title {
+            font-weight: bold;
+            color: #a0a0a0;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+
+        .product-features {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .product-features li {
+            padding: 5px 0 5px 20px;
+            position: relative;
+        }
+
+        .product-features li::before {
+            content: '▸';
+            position: absolute;
+            left: 0;
+            color: #667eea;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 60px 20px;
+            color: #a0a0a0;
+            font-size: 1.2em;
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: #a0a0a0;
+            margin-top: 60px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .topic-header {
+                flex-direction: column;
+            }
+
+            .topic-title {
+                min-width: 100%;
+            }
+
+            .overview {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .scroll-hint {
+            text-align: center;
+            margin-top: 20px;
+            color: #a0a0a0;
+            font-size: 0.9em;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 微博热搜产品创意分析报告</h1>
+            <p class="subtitle">分析日期: 2026-02-10</p>
+        </header>
+
+        <div class="overview">
+            <div class="stat-card">
+                <div class="stat-number">10</div>
+                <div class="stat-label">热搜话题总数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">0</div>
+                <div class="stat-label">优秀项目 (≥80分)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">4</div>
+                <div class="stat-label">良好项目 (60-79分)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">56.3</div>
+                <div class="stat-label">平均评分</div>
+            </div>
+        </div>
+
+        <h2 class="section-title">🏆 高分热点排行</h2>
+        <div id="top-topics"></div>
+
+        <h2 class="section-title">📱 详细分析列表</h2>
+        <div id="all-topics"></div>
+
+        <footer>
+            <p>由 Claude Code 微博热搜产品创意分析器自动生成</p>
+            <p style="margin-top: 10px; font-size: 0.9em;">Powered by AI · 2026-02-10</p>
+        </footer>
+    </div>
+
+    <script>
+        // 话题数据将在生成时注入
+        const topicsData = [{"rank": 1, "title": "春节档电影票房破纪录", "heat_value": "2345678", "tag": "热", "background": "「春节档电影票房破纪录」成为热搜话题,引发广泛关注和讨论。", "timeline": ["话题开始在社交媒体上传播", "相关讨论量快速增长", "登上微博热搜榜", "引发媒体和专家关注"], "scores": {"interesting": 80, "useful": 13, "total": 66.6}, "product_ideas": [{"name": "春节档电影票房破纪录相关应用", "features": ["核心功能1: 信息聚合", "核心功能2: 智能推荐", "核心功能3: 社区互动", "核心功能4: 数据分析"], "target_users": "对该话题感兴趣的用户群体"}]}, {"rank": 2, "title": "AI绘画工具爆火", "heat_value": "1876543", "tag": "新", "background": "「AI绘画工具爆火」成为热搜话题,引发广泛关注和讨论。", "timeline": ["话题开始在社交媒体上传播", "相关讨论量快速增长", "登上微博热搜榜", "引发媒体和专家关注"], "scores": {"interesting": 80, "useful": 14, "total": 66.8}, "product_ideas": [{"name": "AIAI绘画工具助手", "features": ["智能分析和推荐", "个性化定制服务", "一键分享到社交媒体", "数据可视化展示"], "target_users": "科技爱好者和早期采用者(18-35岁)"}]}, {"rank": 3, "title": "年轻人开始流行搭子社交", "heat_value": "1654321", "tag": "", "background": "「年轻人开始流行搭子社交」成为热搜话题,引发广泛关注和讨论。", "timeline": ["话题开始在社交媒体上传播", "相关讨论量快速增长", "登上微博热搜榜", "引发媒体和专家关注"], "scores": {"interesting": 68, "useful": 15, "total": 57.4}, "product_ideas": [{"name": "年轻人开始流行搭平台", "features": ["基于兴趣的智能匹配", "安全认证和隐私保护", "活动组织和管理", "用户评价系统"], "target_users": "追求轻社交的年轻用户(20-35岁)"}]}, {"rank": 4, "title": "智能手表新功能健康监测再升级", "heat_value": "1432109", "tag": "", "background": "「智能手表新功能健康监测再升级」成为热搜话题,引发广泛关注和讨论。", "timeline": ["话题开始在社交媒体上传播", "相关讨论量快速增长", "登上微博热搜榜", "引发媒体和专家关注"], "scores": {"interesting": 63, "useful": 16, "total": 53.6}, "product_ideas": []}, {"rank": 5, "title": "春运返程高峰", "heat_value": "1298765", "tag": "热", "background": "「春运返程高峰」成为热搜话题,引发广泛关注和讨论。", "timeline": ["话题开始在社交媒体上传播", "相关讨论量快速增长", "登上微博热搜榜", "引发媒体和专家关注"], "scores": {"interesting": 75, "useful": 17, "total": 63.4}, "product_ideas": [{"name": "春运返程高峰相关应用", "features": ["核心功能1: 信息聚合", "核心功能2: 智能推荐", "核心功能3: 社区互动", "核心功能4: 数据分析"], "target_users": "对该话题感兴趣的用户群体"}]}, {"rank": 6, "title": "ChatGPT推出新功能", "heat_value": "1187654", "tag": "新", "background": "「ChatGPT推出新功能」成为热搜话题,引发广泛关注和讨论。", "timeline": ["话题开始在社交媒体上传播", "相关讨论量快速增长", "登上微博热搜榜", "引发媒体和专家关注"], "scores": {"interesting": 73, "useful": 18, "total": 62.0}, "product_ideas": [{"name": "ChatGPT推出新相关应用", "features": ["核心功能1: 信息聚合", "核心功能2: 智能推荐", "核心功能3: 社区互动", "核心功能4: 数据分析"], "target_users": "对该话题感兴趣的用户群体"}]}, {"rank": 7, "title": "电动车续航里程新突破", "heat_value": "1076543", "tag": "", "background": "「电动车续航里程新突破」成为热搜话题,引发广泛关注和讨论。", "timeline": ["话题开始在社交媒体上传播", "相关讨论量快速增长", "登上微博热搜榜", "引发媒体和专家关注"], "scores": {"interesting": 56, "useful": 19, "total": 48.6}, "product_ideas": []}, {"rank": 8, "title": "年轻人开始养生", "heat_value": "987654", "tag": "", "background": "「年轻人开始养生」成为热搜话题,引发广泛关注和讨论。", "timeline": ["话题开始在社交媒体上传播", "相关讨论量快速增长", "登上微博热搜榜", "引发媒体和专家关注"], "scores": {"interesting": 54, "useful": 12, "total": 45.6}, "product_ideas": []}, {"rank": 9, "title": "远程办公成新常态", "heat_value": "876543", "tag": "", "background": "「远程办公成新常态」成为热搜话题,引发广泛关注和讨论。", "timeline": ["话题开始在社交媒体上传播", "相关讨论量快速增长", "登上微博热搜榜", "引发媒体和专家关注"], "scores": {"interesting": 52, "useful": 13, "total": 44.2}, "product_ideas": []}, {"rank": 10, "title": "短视频平台推出AI剪辑", "heat_value": "765432", "tag": "新", "background": "「短视频平台推出AI剪辑」成为热搜话题,引发广泛关注和讨论。", "timeline": ["话题开始在社交媒体上传播", "相关讨论量快速增长", "登上微博热搜榜", "引发媒体和专家关注"], "scores": {"interesting": 65, "useful": 14, "total": 54.8}, "product_ideas": []}];
+
+        function renderTopics(topics, containerId, limit = null) {
+            const container = document.getElementById(containerId);
+            const displayTopics = limit ? topics.slice(0, limit) : topics;
+
+            if (displayTopics.length === 0) {
+                container.innerHTML = '<div class="no-data">暂无数据</div>';
+                return;
+            }
+
+            displayTopics.forEach((topic, index) => {
+                const card = document.createElement('div');
+                const scoreClass = topic.scores.total >= 80 ? 'excellent' : 
+                                  topic.scores.total >= 60 ? 'good' : '';
+                card.className = `topic-card ${scoreClass}`;
+                card.style.animationDelay = `${index * 0.1}s`;
+
+                const badge = topic.scores.total >= 80 ? '<span class="badge excellent">优秀</span>' :
+                             topic.scores.total >= 60 ? '<span class="badge good">良好</span>' : '';
+
+                let timelineHTML = '';
+                if (topic.timeline && topic.timeline.length > 0) {
+                    timelineHTML = `
+                        <div class="timeline">
+                            <h3 style="margin-bottom: 15px; color: #a0a0a0; font-size: 1em;">📅 事件脉络</h3>
+                            ${topic.timeline.map(event => `<div class="timeline-item">${event}</div>`).join('')}
+                        </div>
+                    `;
+                }
+
+                let productIdeasHTML = '';
+                if (topic.product_ideas && topic.product_ideas.length > 0) {
+                    productIdeasHTML = `
+                        <div class="product-ideas">
+                            <h3 style="margin-bottom: 15px; color: #a0a0a0; font-size: 1em;">💡 产品创意</h3>
+                            ${topic.product_ideas.map(idea => `
+                                <div class="product-card">
+                                    <div class="product-name">${idea.name}</div>
+                                    <div class="product-section">
+                                        <div class="product-section-title">核心功能</div>
+                                        <ul class="product-features">
+                                            ${idea.features.map(feature => `<li>${feature}</li>`).join('')}
+                                        </ul>
+                                    </div>
+                                    <div class="product-section">
+                                        <div class="product-section-title">目标用户</div>
+                                        <div>${idea.target_users}</div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+
+                card.innerHTML = `
+                    <div class="topic-header">
+                        <div class="topic-title">${topic.title}</div>
+                        <div class="topic-rank">排名 #${topic.rank}</div>
+                    </div>
+
+                    <div class="score-section">
+                        <div class="score-label">
+                            <span>综合评分 ${badge}</span>
+                            <span><strong>${topic.scores.total.toFixed(1)}</strong> / 100</span>
+                        </div>
+                        <div class="score-bar-container">
+                            <div class="score-bar ${scoreClass}" style="width: ${topic.scores.total}%">
+                                ${topic.scores.total.toFixed(1)}分
+                            </div>
+                        </div>
+                        <div style="margin-top: 10px; font-size: 0.9em; color: #a0a0a0;">
+                            有趣度: ${topic.scores.interesting}/80 | 有用度: ${topic.scores.useful}/20
+                        </div>
+                    </div>
+
+                    ${topic.background ? `
+                        <div style="margin: 20px 0; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 10px; border-left: 3px solid #667eea;">
+                            <strong style="color: #667eea;">背景信息:</strong><br>
+                            ${topic.background}
+                        </div>
+                    ` : ''}
+
+                    ${timelineHTML}
+                    ${productIdeasHTML}
+                `;
+
+                container.appendChild(card);
+            });
+        }
+
+        // 渲染高分话题 (≥60分)
+        const topTopics = topicsData.filter(t => t.scores.total >= 60)
+                                    .sort((a, b) => b.scores.total - a.scores.total);
+        renderTopics(topTopics, 'top-topics', 10);
+
+        // 渲染所有话题
+        renderTopics(topicsData, 'all-topics');
+
+        // 添加滚动动画
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.topic-card').forEach(card => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+            observer.observe(card);
+        });
+    </script>
+</body>
+</html>
