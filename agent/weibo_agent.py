@@ -42,7 +42,6 @@ def get_weibo_hotsearch(max_count=20):
 
 def call_ai(prompt, api_key, base_url, model):
     """调用 AI API"""
-    from openai import OpenAI
     import time
 
     for attempt in range(3):
